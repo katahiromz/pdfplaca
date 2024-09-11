@@ -78,11 +78,13 @@ uint32_t g_text_color = 0x000000;
 uint32_t g_back_color = 0xFFFFFF;
 double g_threshold = 1.5;
 
+// 単位をmmからptへ変換する。
 constexpr double pt_from_mm(double mm)
 {
     return mm * (72.0 / 25.4);
 }
 
+// ワイド文字列からANSI文字列に変換する。
 std::string ansi_from_wide(const wchar_t *wide, int codepage = CP_UTF8)
 {
     static char s_buf[1024];
@@ -92,6 +94,7 @@ std::string ansi_from_wide(const wchar_t *wide, int codepage = CP_UTF8)
     return s_buf;
 }
 
+// ANSI文字列からワイド文字列に変換する。
 std::wstring wide_from_ansi(const char *ansi, int codepage = CP_UTF8)
 {
     static wchar_t s_buf[1024];
@@ -101,23 +104,29 @@ std::wstring wide_from_ansi(const char *ansi, int codepage = CP_UTF8)
     return s_buf;
 }
 
+// RGBから赤の値を取得する。
 constexpr uint8_t get_r_value(uint32_t color)
 {
     return (color >> 16) & 0xFF;
 }
+// RGBから緑の値を取得する。
 constexpr uint8_t get_g_value(uint32_t color)
 {
     return (color >> 8) & 0xFF;
 }
+// RGBから青の値を取得する。
 constexpr uint8_t get_b_value(uint32_t color)
 {
     return (color >> 0) & 0xFF;
 }
 
+// UTF-8シーケンスの最初のバイトかどうか判定する。
 constexpr bool u8_is_lead(unsigned char ch)
 {
     return (ch & 0xC0) != 0x80;
 }
+
+// UTF-8文字列の実際の文字数を取得する。
 constexpr size_t u8_len(const char *str)
 {
     size_t len = 0;
@@ -133,6 +142,7 @@ static_assert(u8_len(u8"abあいう漢字") == 7, "");
 static_assert(u8_len(u8"𠮷") == 1, "");
 static_assert(u8_len(u8"😃😃") == 2, "");
 
+// UTF-8文字列の実際の文字に分割する。
 void u8_split_chars(std::vector<std::string>& chars, const char *str)
 {
     std::string s;
@@ -149,6 +159,7 @@ void u8_split_chars(std::vector<std::string>& chars, const char *str)
         chars.push_back(s);
 }
 
+// 文字列を置き換える。
 template <typename T_STR>
 constexpr bool
 mstr_replace_all(T_STR& str, const T_STR& from, const T_STR& to)
@@ -174,6 +185,7 @@ mstr_replace_all(T_STR& str,
     return mstr_replace_all(str, T_STR(from), T_STR(to));
 }
 
+// 文字列を分割する。charsは区切りの文字集合。
 template <typename T_STR_CONTAINER>
 constexpr void
 mstr_split(T_STR_CONTAINER& container,
@@ -191,6 +203,7 @@ mstr_split(T_STR_CONTAINER& container,
     container.push_back(str.substr(i));
 }
 
+// 文字列を結合する。sepは区切り。
 template <typename T_STR_CONTAINER>
 constexpr typename T_STR_CONTAINER::value_type
 mstr_join(const T_STR_CONTAINER& container,
@@ -212,6 +225,7 @@ mstr_join(const T_STR_CONTAINER& container,
     return result;
 }
 
+// 文字列をエスケープする。
 std::string mstr_escape(const std::string& text)
 {
     std::string ret;
@@ -231,6 +245,7 @@ std::string mstr_escape(const std::string& text)
     return ret;
 }
 
+// 文字列のエスケープを解除する。
 std::string mstr_unescape(const std::string& text)
 {
     std::string ret;
@@ -271,6 +286,7 @@ std::string mstr_unescape(const std::string& text)
     return ret;
 }
 
+// UTF-8文字列を改行で分割する。
 void u8_split_by_newlines(std::vector<std::string>& rows, const char *str)
 {
     std::string s = str;
@@ -327,6 +343,7 @@ static inline bool u8_is_small_kana(const char *ptr)
     return u8_contains_one_of(ptr, u8"ぁぃぅぇぉっゃゅょゎゕゖァィゥェォヵㇰヶㇱㇲッㇳㇴㇵㇶㇷㇸㇹㇺャュョㇻㇼㇽㇾㇿヮ");
 }
 
+// UTF-8シーケンスの最初のバイトでシーケンスの長さを判定する。
 int u8_get_skip_chars(uint8_t ch)
 {
     if (!(ch & 0x80))
@@ -345,6 +362,7 @@ int u8_get_skip_chars(uint8_t ch)
     return -1;
 }
 
+// UTF-8からUTF-32に変換する。*skipはシーケンス長。
 uint32_t u32_from_u8(const char *ptr, int *skip)
 {
     uint32_t u32 = 0;
@@ -374,6 +392,7 @@ uint32_t u32_from_u8(const char *ptr, int *skip)
     return u32;
 }
 
+// UTF-8文字列が日本語テキストかどうか判定する。
 int u8_is_japanese_text(const char *str)
 {
     int skip;
@@ -417,6 +436,7 @@ void u8_is_japanese_text_unittest(void)
 #endif
 }
 
+// UTF-8文字列が中国語テキストかどうか判定する。
 int u8_is_chinese_text(const char *str)
 {
     int skip;
@@ -459,6 +479,7 @@ int u8_is_chinese_text(const char *str)
     return 0;
 }
 
+// UTF-8文字列が韓国語テキストかどうか判定する。
 int u8_is_korean_text(const char *str)
 {
     int skip;
@@ -496,6 +517,7 @@ int u8_is_korean_text(const char *str)
     return ret;
 }
 
+// 選択中のフォントが日本語対応か判定する。
 bool pdf_is_font_japanese(cairo_t *cr)
 {
     cairo_set_font_size(cr, 50);
@@ -504,6 +526,7 @@ bool pdf_is_font_japanese(cairo_t *cr)
     return !(extents.width < 1 || extents.height < 1);
 }
 
+// 選択中のフォントが中国語対応か判定する。
 bool pdf_is_font_chinese(cairo_t *cr)
 {
     cairo_set_font_size(cr, 50);
@@ -512,6 +535,7 @@ bool pdf_is_font_chinese(cairo_t *cr)
     return !(extents.width < 1 || extents.height < 1);
 }
 
+// 選択中のフォントが韓国語対応か判定する。
 bool pdf_is_font_korean(cairo_t *cr)
 {
     cairo_set_font_size(cr, 50);
@@ -520,6 +544,7 @@ bool pdf_is_font_korean(cairo_t *cr)
     return !(extents.width < 1 || extents.height < 1);
 }
 
+// PDFに出力したときのテキストの幅の合計を返す。
 double pdf_get_total_text_width(cairo_t *cr, const char *utf8_text)
 {
     std::vector<std::string> chars;
@@ -680,6 +705,7 @@ bool pdf_scaling_v_text(cairo_t *cr, const char *utf8_text, double width, double
     return true;
 }
 
+// 横書き用の文字を描画する。
 void pdf_draw_h_char(cairo_t *cr, const char *text_char, double x, double y, double scale_x, double scale_y, cairo_text_extents_t& extents, cairo_font_extents_t& font_extents)
 {
     // テキストのエクステントを取得
@@ -732,6 +758,7 @@ void pdf_draw_h_char(cairo_t *cr, const char *text_char, double x, double y, dou
     cairo_restore(cr); // 描画状態を元に戻す
 }
 
+// 縦書き用の文字を描画する。
 void pdf_draw_v_char(cairo_t *cr, const char *text_char, double x, double y, double scale_x, double scale_y, cairo_text_extents_t& extents, cairo_font_extents_t& font_extents)
 {
     // テキストのエクステントを取得
@@ -915,6 +942,7 @@ bool pdf_draw_h_text(cairo_t *cr, const char *text, double x0, double y0, double
     return true;
 }
 
+// 縦書きに備えて、半角文字を全角文字に変換する。
 std::string u8_locale_map_text(const char *text)
 {
     std::wstring wide = wide_from_ansi(text, CP_UTF8);
@@ -1026,7 +1054,7 @@ bool pdfplaca_parse_cmdline(int argc, _TCHAR **argv)
                 return false;
             g_out_text = argv[++iarg];
         }
-        else if (_tcscmp(arg, _T("-o")) == 0)
+        else if (_tcscmp(arg, _T("-o")) == 0) // output.pdf
         {
             if (iarg + 1 >= argc)
                 return false;
@@ -1265,18 +1293,7 @@ bool pdfplaca_do_it(const _TCHAR *out_file, const _TCHAR *out_text, const _TCHAR
     utf8_text = mstr_unescape(utf8_text.c_str());
 
     // Draw main
-#if 0
-    double scale_x = 3, scale_y = 2;
-    cairo_set_font_size(cr, 30);
-    cairo_text_extents_t extents;
-    cairo_font_extents_t font_extents;
-    double x = margin, y = margin;
-    pdf_draw_v_char(cr, "ABab123", x, y, scale_x, scale_y, extents, font_extents);
-    pdf_draw_v_char(cr, "g", x + 500, y, scale_x, scale_y, extents, font_extents);
-    cairo_stroke(cr);
-#else
     pdfplaca_draw_main(cr, utf8_text.c_str(), page_width, page_height, printable_width, printable_height, margin);
-#endif
 
     // Clean up
     cairo_destroy(cr);
@@ -1294,12 +1311,13 @@ EnumFontFamProc(
     LPARAM lParam)
 {
     auto pList = reinterpret_cast<std::vector<std::wstring> *>(lParam);
-    if (plf->lfFaceName[0] == L'@')
+    if (plf->lfFaceName[0] == L'@') // 縦書きフォントは無視。
         return TRUE;
     pList->push_back(plf->lfFaceName);
     return TRUE;
 }
 
+// フォントを列挙する。
 void pdfplaca_list_fonts(void)
 {
     HDC hDC = CreateCompatibleDC(NULL);
