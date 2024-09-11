@@ -27,7 +27,7 @@
 // Show version info
 void pdfplaca_version(void)
 {
-    std::printf("pdfplaca by katahiromz Version 0.0\n");
+    std::printf("pdfplaca by katahiromz Version 0.1\n");
 }
 
 // Get the default font
@@ -55,6 +55,7 @@ void pdfplaca_usage(void)
         "  --back-color #RRGGBB      Specify background color (default: white).\n"
         "  --threshold THRESHOLD     Specify aspect ratio threshold (default: 1.5).\n"
         "  --vertical                Use vertical writing.\n"
+        "  --y-adjust VALUE          Y adjustment in mm (default: 0).\n"
         "  --font-list               List font entries.\n"
         "  --help                    Display this message.\n"
         "  --version                 Display version information.\n",
@@ -77,6 +78,7 @@ const _TCHAR *g_orientation = _T("landscape");
 uint32_t g_text_color = 0x000000;
 uint32_t g_back_color = 0xFFFFFF;
 double g_threshold = 1.5;
+double g_y_adjust = 0;
 
 // 単位をmmからptへ変換する。
 constexpr double pt_from_mm(double mm)
@@ -708,6 +710,9 @@ bool pdf_scaling_v_text(cairo_t *cr, const char *utf8_text, double width, double
 // 横書き用の文字を描画する。
 void pdf_draw_h_char(cairo_t *cr, const char *text_char, double x, double y, double scale_x, double scale_y, cairo_text_extents_t& extents, cairo_font_extents_t& font_extents)
 {
+    // 補正分。
+    y += g_y_adjust;
+
     // テキストのエクステントを取得
     cairo_text_extents(cr, text_char, &extents);
     cairo_font_extents(cr, &font_extents);
@@ -764,6 +769,9 @@ void pdf_draw_v_char(cairo_t *cr, const char *text_char, double x, double y, dou
     // テキストのエクステントを取得
     cairo_text_extents(cr, text_char, &extents);
     cairo_font_extents(cr, &font_extents);
+
+    // 補正分。
+    y += g_y_adjust;
 
     // 句読点なら右にずらす。
     if (u8_is_comma_period(text_char))
@@ -1093,6 +1101,15 @@ bool pdfplaca_parse_cmdline(int argc, _TCHAR **argv)
             _TCHAR *endptr;
             g_threshold = _tcstod(argv[++iarg], &endptr);
             if (*endptr || !std::isnormal(g_margin) || g_margin < 1.0)
+                return false;
+        }
+        else if (_tcscmp(arg, _T("--y-adjust")) == 0)
+        {
+            if (iarg + 1 >= argc)
+                return false;
+            _TCHAR *endptr;
+            g_y_adjust = -pt_from_mm(_tcstod(argv[++iarg], &endptr));
+            if (*endptr || std::isinf(g_y_adjust) || std::isnan(g_y_adjust))
                 return false;
         }
         else if (_tcscmp(arg, _T("--font")) == 0)
