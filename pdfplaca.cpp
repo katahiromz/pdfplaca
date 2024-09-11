@@ -1108,9 +1108,10 @@ bool pdfplaca_parse_cmdline(int argc, _TCHAR **argv)
             if (iarg + 1 >= argc)
                 return false;
             _TCHAR *endptr;
-            g_y_adjust = -pt_from_mm(_tcstod(argv[++iarg], &endptr));
+            g_y_adjust = _tcstod(argv[++iarg], &endptr);
             if (*endptr || std::isinf(g_y_adjust) || std::isnan(g_y_adjust))
                 return false;
+            g_y_adjust = -pt_from_mm(g_y_adjust);
         }
         else if (_tcscmp(arg, _T("--font")) == 0)
         {
