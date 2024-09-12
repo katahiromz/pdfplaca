@@ -1267,11 +1267,11 @@ bool pdfplaca_do_it(const _TCHAR *out_file, const _TCHAR *out_text, const _TCHAR
 
     // Initialize Cairo
 #ifdef UNICODE
-    std::string utf8_file = ansi_from_wide(out_file, CP_ACP);
+    std::string filename = ansi_from_wide(out_file, CP_ACP);
 #else
-    std::string utf8_file = out_file;
+    std::string filename = out_file;
 #endif
-    cairo_surface_t *surface = cairo_pdf_surface_create(utf8_file.c_str(), page_width, page_height);
+    cairo_surface_t *surface = cairo_pdf_surface_create(filename.c_str(), page_width, page_height);
     cairo_t *cr = cairo_create(surface);
 
     // Get UTF-8 text
