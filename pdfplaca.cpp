@@ -1159,6 +1159,7 @@ bool pdfplaca_parse_cmdline(int argc, _TCHAR **argv)
     return true;
 }
 
+// 横書きの1ページを描画する。
 bool pdfplaca_draw_h_page(cairo_t *cr, const std::vector<std::string>& rows, double page_width, double page_height, double printable_width, double printable_height, double margin)
 {
     double y = margin;
@@ -1193,6 +1194,7 @@ bool pdfplaca_draw_h_page(cairo_t *cr, const std::vector<std::string>& rows, dou
     return true;
 }
 
+// 縦書きの1ページを描画する。
 bool pdfplaca_draw_v_page(cairo_t *cr, const std::vector<std::string>& rows, double page_width, double page_height, double printable_width, double printable_height, double margin)
 {
     double x = 0;
@@ -1231,6 +1233,7 @@ bool pdfplaca_draw_v_page(cairo_t *cr, const std::vector<std::string>& rows, dou
     return true;
 }
 
+// ページを描画する。
 bool pdfplaca_draw_page(cairo_t *cr, const char *utf8_text, double page_width, double page_height, double printable_width, double printable_height, double margin)
 {
     // Split rows
@@ -1238,11 +1241,9 @@ bool pdfplaca_draw_page(cairo_t *cr, const char *utf8_text, double page_width, d
     u8_split_by_newlines(rows, utf8_text);
 
     if (g_vertical) // Vertical writing?
-        pdfplaca_draw_v_page(cr, rows, page_width, page_height, printable_width, printable_height, margin);
+        return pdfplaca_draw_v_page(cr, rows, page_width, page_height, printable_width, printable_height, margin);
     else
-        pdfplaca_draw_h_page(cr, rows, page_width, page_height, printable_width, printable_height, margin);
-
-    return true;
+        return pdfplaca_draw_h_page(cr, rows, page_width, page_height, printable_width, printable_height, margin);
 }
 
 bool pdfplaca_do_it(const _TCHAR *out_file, const _TCHAR *out_text, const _TCHAR *font_name)
