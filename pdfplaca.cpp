@@ -27,7 +27,7 @@
 // Show version info
 void pdfplaca_version(void)
 {
-    std::printf("pdfplaca by katahiromz Version 0.2\n");
+    std::printf("pdfplaca by katahiromz Version 0.3\n");
 }
 
 // Get the default font
@@ -524,7 +524,7 @@ int u8_is_korean_text(const char *str)
 // 選択中のフォントが日本語対応か判定する。
 bool pdf_is_font_japanese(cairo_t *cr)
 {
-    cairo_set_font_size(cr, 50);
+    cairo_set_font_size(cr, 30);
     cairo_text_extents_t extents;
     cairo_text_extents(cr, u8"あ", &extents);
     return !(extents.width < 1 || extents.height < 1);
@@ -533,7 +533,7 @@ bool pdf_is_font_japanese(cairo_t *cr)
 // 選択中のフォントが中国語対応か判定する。
 bool pdf_is_font_chinese(cairo_t *cr)
 {
-    cairo_set_font_size(cr, 50);
+    cairo_set_font_size(cr, 30);
     cairo_text_extents_t extents;
     cairo_text_extents(cr, u8"沉", &extents);
     return !(extents.width < 1 || extents.height < 1);
@@ -542,7 +542,7 @@ bool pdf_is_font_chinese(cairo_t *cr)
 // 選択中のフォントが韓国語対応か判定する。
 bool pdf_is_font_korean(cairo_t *cr)
 {
-    cairo_set_font_size(cr, 50);
+    cairo_set_font_size(cr, 30);
     cairo_text_extents_t extents;
     cairo_text_extents(cr, u8"沉", &extents);
     return !(extents.width < 1 || extents.height < 1);
