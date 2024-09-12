@@ -27,7 +27,7 @@
 // Show version info
 void pdfplaca_version(void)
 {
-    std::printf("pdfplaca by katahiromz Version 0.7\n");
+    std::printf("pdfplaca by katahiromz Version 0.8\n");
 }
 
 // Get the default font
