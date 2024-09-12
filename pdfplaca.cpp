@@ -314,7 +314,7 @@ bool u8_contains_one_of(const char *ptr, const char *char_set)
 // カッコ（タイプ1）か？
 static inline bool u8_is_paren_type_1(const char *ptr)
 {
-    return u8_contains_one_of(ptr, u8"(（[［【】］）)");
+    return u8_contains_one_of(ptr, u8"(（[［〔【｛〈《≪｟⁅〖〘«»〙〗⁆｠≫》〉｝】〕］]）)");
 }
 
 // カッコ（タイプ2）か？
