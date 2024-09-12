@@ -1342,8 +1342,7 @@ bool pdfplaca_do_it(const _TCHAR *out_file, const _TCHAR *out_text, const _TCHAR
 
         // Draw pages
         size_t num_page = (chars.size() + g_letters_per_page - 1) / g_letters_per_page;
-        size_t iChar = 0;
-        for (size_t iPage = 0; iPage < num_page; ++iPage)
+        for (size_t iPage = 0, iChar = 0; iPage < num_page; ++iPage)
         {
             // Limit the number of characters per page
             std::string str;
@@ -1355,6 +1354,8 @@ bool pdfplaca_do_it(const _TCHAR *out_file, const _TCHAR *out_text, const _TCHAR
 
             // Draw page
             pdfplaca_draw_page(cr, str.c_str(), page_width, page_height, printable_width, printable_height, margin);
+
+            // New page
             cairo_show_page(cr);
         }
     }
