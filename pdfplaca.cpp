@@ -27,7 +27,7 @@
 // Show version info
 void pdfplaca_version(void)
 {
-    std::printf("pdfplaca by katahiromz Version 0.1\n");
+    std::printf("pdfplaca by katahiromz Version 0.2\n");
 }
 
 // Get the default font
@@ -54,6 +54,7 @@ void pdfplaca_usage(void)
         "  --text-color #RRGGBB      Specify text color (default: black).\n"
         "  --back-color #RRGGBB      Specify background color (default: white).\n"
         "  --threshold THRESHOLD     Specify aspect ratio threshold (default: 1.5).\n"
+        "  --letters-per-page NUM    Specify letters per page (default: -1)\n"
         "  --vertical                Use vertical writing.\n"
         "  --y-adjust VALUE          Y adjustment in mm (default: 0).\n"
         "  --font-list               List font entries.\n"
@@ -79,6 +80,7 @@ uint32_t g_text_color = 0x000000;
 uint32_t g_back_color = 0xFFFFFF;
 double g_threshold = 1.5;
 double g_y_adjust = 0;
+int g_letters_per_page = -1;
 
 // 単位をmmからptへ変換する。
 constexpr double pt_from_mm(double mm)
@@ -577,10 +579,13 @@ bool pdf_scaling_h_text(cairo_t *cr, const char *utf8_text, double width, double
 
     // Adjust the font size and scale
     cairo_text_extents_t extents;
+    cairo_font_extents_t font_extents;
     double old_font_size = font_size, old_scale_x = scale_x, old_scale_y = scale_y;
     for (;;)
     {
         cairo_set_font_size(cr, font_size);
+        cairo_font_extents(cr, &font_extents);
+
         cairo_text_extents(cr, utf8_text, &extents);
 
         if (font_size >= 10000 || !extents.width || !extents.height)
@@ -590,13 +595,13 @@ bool pdf_scaling_h_text(cairo_t *cr, const char *utf8_text, double width, double
         old_scale_x = scale_x;
         old_scale_y = scale_y;
 
-        if (extents.width * scale_x < width * 0.9 && extents.height * scale_y < height * 0.9)
+        if (extents.width * scale_x < width * 0.9 && extents.height * scale_y < height * 0.9 && font_extents.height * scale_y < height * 0.9)
             font_size *= 1.1;
         else if (threshold < 1.1)
             break;
         else if (extents.width * scale_x < width * 0.9)
             scale_x *= 1.1;
-        else if (extents.height * scale_y < height * 0.9)
+        else if (extents.height * scale_y < height * 0.9 && font_extents.height * scale_y < height * 0.9)
             scale_y *= 1.1;
         else
             break;
@@ -1137,6 +1142,14 @@ bool pdfplaca_parse_cmdline(int argc, _TCHAR **argv)
                 return false;
             g_back_color = value;
         }
+        else if (_tcscmp(arg, _T("--letters-per-page")) == 0)
+        {
+            if (iarg + 1 >= argc)
+                return false;
+            g_letters_per_page = _ttoi(argv[++iarg]);
+            if (g_letters_per_page == 0)
+                return false;
+        }
         else
         {
             return false;
@@ -1146,7 +1159,7 @@ bool pdfplaca_parse_cmdline(int argc, _TCHAR **argv)
     return true;
 }
 
-bool pdfplaca_draw_main(cairo_t *cr, const char *utf8_text, double page_width, double page_height, double printable_width, double printable_height, double margin)
+bool pdfplaca_draw_page(cairo_t *cr, const char *utf8_text, double page_width, double page_height, double printable_width, double printable_height, double margin)
 {
     // Split rows
     std::vector<std::string> rows;
@@ -1163,30 +1176,26 @@ bool pdfplaca_draw_main(cairo_t *cr, const char *utf8_text, double page_width, d
             // Convert X coordinate
             double x0 = (2 * margin + printable_width) - (x + row_width);
             // Fill text background
+            cairo_save(cr); // Save drawing status
             {
-                cairo_save(cr); // Save drawing status
-                {
-                    auto r = get_r_value(g_back_color);
-                    auto g = get_g_value(g_back_color);
-                    auto b = get_b_value(g_back_color);
-                    cairo_set_source_rgb(cr, r / 255.0, g / 255.0, b / 255.0);
-                    cairo_rectangle(cr, x0, margin, row_width, printable_height);
-                    cairo_fill(cr);
-                }
-                cairo_restore(cr); // Restore drawing status
+                auto r = get_r_value(g_back_color);
+                auto g = get_g_value(g_back_color);
+                auto b = get_b_value(g_back_color);
+                cairo_set_source_rgb(cr, r / 255.0, g / 255.0, b / 255.0);
+                cairo_rectangle(cr, x0, margin, row_width, printable_height);
+                cairo_fill(cr);
             }
+            cairo_restore(cr); // Restore drawing status
             // Draw vertical text
+            cairo_save(cr); // Save drawing status
             {
-                cairo_save(cr); // Save drawing status
-                {
-                    auto r = get_r_value(g_text_color);
-                    auto g = get_g_value(g_text_color);
-                    auto b = get_b_value(g_text_color);
-                    cairo_set_source_rgb(cr, r / 255.0, g / 255.0, b / 255.0);
-                    pdf_draw_v_text(cr, rows[iRow].c_str(), x0, margin, row_width, printable_height, g_threshold);
-                }
-                cairo_restore(cr); // Restore drawing status
+                auto r = get_r_value(g_text_color);
+                auto g = get_g_value(g_text_color);
+                auto b = get_b_value(g_text_color);
+                cairo_set_source_rgb(cr, r / 255.0, g / 255.0, b / 255.0);
+                pdf_draw_v_text(cr, rows[iRow].c_str(), x0, margin, row_width, printable_height, g_threshold);
             }
+            cairo_restore(cr); // Restore drawing status
             // Advance
             x += row_width;
         }
@@ -1310,8 +1319,38 @@ bool pdfplaca_do_it(const _TCHAR *out_file, const _TCHAR *out_text, const _TCHAR
     // Unescape string
     utf8_text = mstr_unescape(utf8_text.c_str());
 
-    // Draw main
-    pdfplaca_draw_main(cr, utf8_text.c_str(), page_width, page_height, printable_width, printable_height, margin);
+    if (g_letters_per_page == -1)
+    {
+        // Draw page
+        pdfplaca_draw_page(cr, utf8_text.c_str(), page_width, page_height, printable_width, printable_height, margin);
+        cairo_show_page(cr);
+    }
+    else if (g_letters_per_page > 0)
+    {
+        mstr_replace_all(utf8_text, " ", "");
+        mstr_replace_all(utf8_text, "\t", "");
+        mstr_replace_all(utf8_text, "\r", "");
+        mstr_replace_all(utf8_text, "\n", "");
+        mstr_replace_all(utf8_text, u8"　", "");
+
+        std::vector<std::string> chars;
+        u8_split_chars(chars, utf8_text.c_str());
+
+        size_t num_page = (chars.size() + g_letters_per_page - 1) / g_letters_per_page;
+        size_t iChar = 0;
+        for (size_t iPage = 0; iPage < num_page; ++iPage)
+        {
+            std::string str;
+            for (; iChar < (iPage + 1) * g_letters_per_page; ++iChar)
+            {
+                if (iChar < chars.size())
+                    str += chars[iChar];
+            }
+
+            pdfplaca_draw_page(cr, str.c_str(), page_width, page_height, printable_width, printable_height, margin);
+            cairo_show_page(cr);
+        }
+    }
 
     // Clean up
     cairo_destroy(cr);
