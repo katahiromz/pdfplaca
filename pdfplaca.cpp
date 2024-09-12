@@ -1159,6 +1159,78 @@ bool pdfplaca_parse_cmdline(int argc, _TCHAR **argv)
     return true;
 }
 
+bool pdfplaca_draw_h_page(cairo_t *cr, const std::vector<std::string>& rows, double page_width, double page_height, double printable_width, double printable_height, double margin)
+{
+    double y = margin;
+    double row_height = (page_height - margin * (rows.size() + 1)) / rows.size();
+    for (size_t iRow = 0; iRow < rows.size(); ++iRow)
+    {
+        // Fill text background
+        cairo_save(cr); // Save drawing status
+        {
+            auto r = get_r_value(g_back_color);
+            auto g = get_g_value(g_back_color);
+            auto b = get_b_value(g_back_color);
+            cairo_set_source_rgb(cr, r / 255.0, g / 255.0, b / 255.0);
+            cairo_rectangle(cr, margin, y, printable_width, row_height);
+            cairo_fill(cr);
+        }
+        cairo_restore(cr); // Restore drawing status
+        // Draw horizontal text
+        {
+            auto r = get_r_value(g_text_color);
+            auto g = get_g_value(g_text_color);
+            auto b = get_b_value(g_text_color);
+            cairo_set_source_rgb(cr, r / 255.0, g / 255.0, b / 255.0);
+            pdf_draw_h_text(cr, rows[iRow].c_str(), margin, y, printable_width, row_height, g_threshold);
+        }
+        // Advance
+        y += row_height;
+        // Advance
+        y += margin;
+    }
+
+    return true;
+}
+
+bool pdfplaca_draw_v_page(cairo_t *cr, const std::vector<std::string>& rows, double page_width, double page_height, double printable_width, double printable_height, double margin)
+{
+    double x = 0;
+    double row_width = (page_width - margin * (rows.size() + 1)) / rows.size();
+    for (size_t iRow = 0; iRow < rows.size(); ++iRow)
+    {
+        // Advance
+        x += margin;
+        // Convert X coordinate
+        double x0 = (2 * margin + printable_width) - (x + row_width);
+        // Fill text background
+        cairo_save(cr); // Save drawing status
+        {
+            auto r = get_r_value(g_back_color);
+            auto g = get_g_value(g_back_color);
+            auto b = get_b_value(g_back_color);
+            cairo_set_source_rgb(cr, r / 255.0, g / 255.0, b / 255.0);
+            cairo_rectangle(cr, x0, margin, row_width, printable_height);
+            cairo_fill(cr);
+        }
+        cairo_restore(cr); // Restore drawing status
+        // Draw vertical text
+        cairo_save(cr); // Save drawing status
+        {
+            auto r = get_r_value(g_text_color);
+            auto g = get_g_value(g_text_color);
+            auto b = get_b_value(g_text_color);
+            cairo_set_source_rgb(cr, r / 255.0, g / 255.0, b / 255.0);
+            pdf_draw_v_text(cr, rows[iRow].c_str(), x0, margin, row_width, printable_height, g_threshold);
+        }
+        cairo_restore(cr); // Restore drawing status
+        // Advance
+        x += row_width;
+    }
+
+    return true;
+}
+
 bool pdfplaca_draw_page(cairo_t *cr, const char *utf8_text, double page_width, double page_height, double printable_width, double printable_height, double margin)
 {
     // Split rows
@@ -1166,71 +1238,9 @@ bool pdfplaca_draw_page(cairo_t *cr, const char *utf8_text, double page_width, d
     u8_split_by_newlines(rows, utf8_text);
 
     if (g_vertical) // Vertical writing?
-    {
-        double x = 0;
-        double row_width = (page_width - margin * (rows.size() + 1)) / rows.size();
-        for (size_t iRow = 0; iRow < rows.size(); ++iRow)
-        {
-            // Advance
-            x += margin;
-            // Convert X coordinate
-            double x0 = (2 * margin + printable_width) - (x + row_width);
-            // Fill text background
-            cairo_save(cr); // Save drawing status
-            {
-                auto r = get_r_value(g_back_color);
-                auto g = get_g_value(g_back_color);
-                auto b = get_b_value(g_back_color);
-                cairo_set_source_rgb(cr, r / 255.0, g / 255.0, b / 255.0);
-                cairo_rectangle(cr, x0, margin, row_width, printable_height);
-                cairo_fill(cr);
-            }
-            cairo_restore(cr); // Restore drawing status
-            // Draw vertical text
-            cairo_save(cr); // Save drawing status
-            {
-                auto r = get_r_value(g_text_color);
-                auto g = get_g_value(g_text_color);
-                auto b = get_b_value(g_text_color);
-                cairo_set_source_rgb(cr, r / 255.0, g / 255.0, b / 255.0);
-                pdf_draw_v_text(cr, rows[iRow].c_str(), x0, margin, row_width, printable_height, g_threshold);
-            }
-            cairo_restore(cr); // Restore drawing status
-            // Advance
-            x += row_width;
-        }
-    }
+        pdfplaca_draw_v_page(cr, rows, page_width, page_height, printable_width, printable_height, margin);
     else
-    {
-        double y = margin;
-        double row_height = (page_height - margin * (rows.size() + 1)) / rows.size();
-        for (size_t iRow = 0; iRow < rows.size(); ++iRow)
-        {
-            // Fill text background
-            cairo_save(cr); // Save drawing status
-            {
-                auto r = get_r_value(g_back_color);
-                auto g = get_g_value(g_back_color);
-                auto b = get_b_value(g_back_color);
-                cairo_set_source_rgb(cr, r / 255.0, g / 255.0, b / 255.0);
-                cairo_rectangle(cr, margin, y, printable_width, row_height);
-                cairo_fill(cr);
-            }
-            cairo_restore(cr); // Restore drawing status
-            // Draw horizontal text
-            {
-                auto r = get_r_value(g_text_color);
-                auto g = get_g_value(g_text_color);
-                auto b = get_b_value(g_text_color);
-                cairo_set_source_rgb(cr, r / 255.0, g / 255.0, b / 255.0);
-                pdf_draw_h_text(cr, rows[iRow].c_str(), margin, y, printable_width, row_height, g_threshold);
-            }
-            // Advance
-            y += row_height;
-            // Advance
-            y += margin;
-        }
-    }
+        pdfplaca_draw_h_page(cr, rows, page_width, page_height, printable_width, printable_height, margin);
 
     return true;
 }
