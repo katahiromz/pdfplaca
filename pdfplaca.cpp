@@ -81,6 +81,7 @@ uint32_t g_back_color = 0xFFFFFF;
 double g_threshold = 1.5;
 double g_y_adjust = 0;
 int g_letters_per_page = -1;
+bool g_fixed_pitch_font = false;
 
 // 単位をmmからptへ変換する。
 constexpr double pt_from_mm(double mm)
@@ -546,6 +547,23 @@ bool pdf_is_font_korean(cairo_t *cr)
     cairo_text_extents_t extents;
     cairo_text_extents(cr, u8"沉", &extents);
     return !(extents.width < 1 || extents.height < 1);
+}
+
+// 二つの値がほとんど等しいか？
+inline bool is_nearly_equal(double x0, double x1)
+{
+    return std::fabs(x1 - x0) < 0.25;
+}
+
+// 選択中のフォントは等幅フォントか？
+bool pdf_is_font_fixed_pitch(cairo_t *cr)
+{
+    cairo_text_extents_t extents;
+    cairo_text_extents(cr, "ww", &extents);
+    double x0 = extents.x_advance;
+    cairo_text_extents(cr, u8"目", &extents);
+    double x1 = extents.x_advance;
+    return is_nearly_equal(x0, x1);
 }
 
 // PDFに出力したときのテキストの幅の合計を返す。
@@ -1333,9 +1351,16 @@ bool pdfplaca_do_it(const _TCHAR *out_file, const _TCHAR *out_text, const _TCHAR
     // Unescape string
     utf8_text = mstr_unescape(utf8_text.c_str());
 
+    g_fixed_pitch_font = pdf_is_font_fixed_pitch(cr);
+    if (g_fixed_pitch_font)
+        printf("fixed pitch font\n");
+    else
+        printf("proportional font\n");
+
     if (g_letters_per_page == -1)
     {
         // Draw page (one page only)
+        printf("Page %d\n", 1);
         pdfplaca_draw_page(cr, utf8_text.c_str(), page_width, page_height, printable_width, printable_height, margin);
     }
     else if (g_letters_per_page > 0)
@@ -1355,6 +1380,7 @@ bool pdfplaca_do_it(const _TCHAR *out_file, const _TCHAR *out_text, const _TCHAR
         size_t num_page = (chars.size() + g_letters_per_page - 1) / g_letters_per_page;
         for (size_t iPage = 0, iChar = 0; iPage < num_page; ++iPage)
         {
+            printf("Page %d\n", int(iPage + 1));
             // Limit the number of characters per page
             std::string str;
             for (; iChar < (iPage + 1) * g_letters_per_page; ++iChar)
