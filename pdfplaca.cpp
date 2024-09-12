@@ -570,35 +570,30 @@ bool pdf_is_fixed_pitch_font(cairo_t *cr)
     cairo_set_font_size(cr, 30);
     cairo_text_extents(cr, "wwww", &extents);
 
-    double x0 = extents.x_advance;
-    bool ret;
+    double x0 = extents.x_advance, x1;
     if (pdf_is_font_japanese(cr))
     {
         cairo_text_extents(cr, u8"目目", &extents);
-        double x1 = extents.x_advance;
-        ret = is_nearly_equal(x0, x1);
+        x1 = extents.x_advance;
     }
     else if (pdf_is_font_chinese(cr))
     {
         cairo_text_extents(cr, u8"沉沉", &extents);
-        double x1 = extents.x_advance;
-        ret = is_nearly_equal(x0, x1);
+        x1 = extents.x_advance;
     }
     else if (pdf_is_font_korean(cr))
     {
         cairo_text_extents(cr, u8"작작", &extents);
-        double x1 = extents.x_advance;
-        ret = is_nearly_equal(x0, x1);
+        x1 = extents.x_advance;
     }
     else
     {
         cairo_text_extents(cr, "iiii", &extents);
-        double x1 = extents.x_advance;
-        ret = is_nearly_equal(x0, x1);
+        x1 = extents.x_advance;
     }
 
     cairo_restore(cr);
-    return ret;
+    return is_nearly_equal(x0, x1);
 }
 
 // PDFに出力したときのテキストの幅の合計を返す。
@@ -788,7 +783,7 @@ void pdf_draw_h_char(cairo_t *cr, const char *text_char, double x, double y, dou
     cairo_text_extents(cr, text_char, &extents);
     cairo_font_extents(cr, &font_extents);
 
-    if (1)
+    if (0)
     {
         // ボックスを描画
         cairo_save(cr); // 描画状態を保存
