@@ -27,7 +27,7 @@
 // Show version info
 void pdfplaca_version(void)
 {
-    std::printf("pdfplaca by katahiromz Version 0.5\n");
+    std::printf("pdfplaca by katahiromz Version 0.7\n");
 }
 
 // Get the default font
@@ -525,27 +525,33 @@ int u8_is_korean_text(const char *str)
 // 選択中のフォントが日本語対応か判定する。
 bool pdf_is_font_japanese(cairo_t *cr)
 {
+    cairo_save(cr);
     cairo_set_font_size(cr, 30);
     cairo_text_extents_t extents;
     cairo_text_extents(cr, u8"あ", &extents);
+    cairo_restore(cr);
     return !(extents.width < 1 || extents.height < 1);
 }
 
 // 選択中のフォントが中国語対応か判定する。
 bool pdf_is_font_chinese(cairo_t *cr)
 {
+    cairo_save(cr);
     cairo_set_font_size(cr, 30);
     cairo_text_extents_t extents;
     cairo_text_extents(cr, u8"沉", &extents);
+    cairo_restore(cr);
     return !(extents.width < 1 || extents.height < 1);
 }
 
 // 選択中のフォントが韓国語対応か判定する。
 bool pdf_is_font_korean(cairo_t *cr)
 {
+    cairo_save(cr);
     cairo_set_font_size(cr, 30);
     cairo_text_extents_t extents;
     cairo_text_extents(cr, u8"작", &extents);
+    cairo_restore(cr);
     return !(extents.width < 1 || extents.height < 1);
 }
 
@@ -558,29 +564,41 @@ inline bool is_nearly_equal(double x0, double x1)
 // 選択中のフォントは等幅フォントか？
 bool pdf_is_fixed_pitch_font(cairo_t *cr)
 {
+    cairo_save(cr);
+
     cairo_text_extents_t extents;
+    cairo_set_font_size(cr, 30);
     cairo_text_extents(cr, "wwww", &extents);
+
     double x0 = extents.x_advance;
+    bool ret;
     if (pdf_is_font_japanese(cr))
     {
         cairo_text_extents(cr, u8"目目", &extents);
-        return is_nearly_equal(x0, extents.x_advance);
+        double x1 = extents.x_advance;
+        ret = is_nearly_equal(x0, x1);
     }
     else if (pdf_is_font_chinese(cr))
     {
         cairo_text_extents(cr, u8"沉沉", &extents);
-        return is_nearly_equal(x0, extents.x_advance);
+        double x1 = extents.x_advance;
+        ret = is_nearly_equal(x0, x1);
     }
     else if (pdf_is_font_korean(cr))
     {
         cairo_text_extents(cr, u8"작작", &extents);
-        return is_nearly_equal(x0, extents.x_advance);
+        double x1 = extents.x_advance;
+        ret = is_nearly_equal(x0, x1);
     }
     else
     {
         cairo_text_extents(cr, "iiii", &extents);
-        return is_nearly_equal(x0, extents.x_advance);
+        double x1 = extents.x_advance;
+        ret = is_nearly_equal(x0, x1);
     }
+
+    cairo_restore(cr);
+    return ret;
 }
 
 // PDFに出力したときのテキストの幅の合計を返す。
@@ -594,7 +612,7 @@ double pdf_get_total_text_width(cairo_t *cr, const char *utf8_text)
     {
         cairo_text_extents_t extents;
         cairo_text_extents(cr, chars[ich].c_str(), &extents);
-        text_width += extents.width;
+        text_width += extents.x_advance;
     }
 
     return text_width;
@@ -603,61 +621,21 @@ double pdf_get_total_text_width(cairo_t *cr, const char *utf8_text)
 // 小さいカナの縮小率。
 #define SMALL_KANA_RATIO 0.55
 
-// Do scaling for drawing horizontal text
-bool pdf_scaling_h_text(cairo_t *cr, const char *utf8_text, double width, double height, double& font_size, double& scale_x, double& scale_y, double threshold)
+void pdf_get_h_text_width_and_height(cairo_t *cr, const std::vector<std::string>& chars, double& text_width, double& text_height)
 {
-    scale_x = scale_y = 1;
-    font_size = 10;
-
-    if (!*utf8_text)
-        return false;
-
-    // Adjust the font size and scale
+    text_width = text_height = 0;
     cairo_text_extents_t extents;
     cairo_font_extents_t font_extents;
-    double old_font_size = font_size, old_scale_x = scale_x, old_scale_y = scale_y;
-    for (;;)
+    cairo_font_extents(cr, &font_extents);
+    for (auto& text_char : chars)
     {
-        cairo_set_font_size(cr, font_size);
-        cairo_font_extents(cr, &font_extents);
-
-        cairo_text_extents(cr, utf8_text, &extents);
-
-        if (font_size >= 10000 || !extents.width || !extents.height)
-            return false;
-
-        old_font_size = font_size;
-        old_scale_x = scale_x;
-        old_scale_y = scale_y;
-
-        if (extents.width * scale_x < width * 0.9 && extents.height * scale_y < height * 0.9 && font_extents.height * scale_y < height * 0.9)
-            font_size *= 1.1;
-        else if (threshold < 1.1)
-            break;
-        else if (extents.width * scale_x < width * 0.9)
-            scale_x *= 1.1;
-        else if (extents.height * scale_y < height * 0.9 && font_extents.height * scale_y < height * 0.9)
-            scale_y *= 1.1;
-        else
-            break;
+        cairo_text_extents(cr, text_char.c_str(), &extents);
+        if (text_height < extents.height)
+            text_height = extents.height;
+        if (text_height < font_extents.height)
+            text_height = font_extents.height;
+        text_width += extents.x_advance;
     }
-
-    font_size = old_font_size;
-    scale_x = old_scale_x;
-    scale_y = old_scale_y;
-
-    std::string text = utf8_text;
-    size_t len = u8_len(text.c_str());
-
-    cairo_set_font_size(cr, font_size);
-    cairo_text_extents(cr, text.c_str(), &extents);
-
-    if ((extents.width * scale_x / len) / (extents.height * scale_y) > threshold)
-        scale_x = threshold * (extents.height * scale_y) * len / extents.width;
-    if ((extents.height * scale_y) / (extents.width * scale_x / len) > threshold)
-        scale_y = threshold * (extents.width * scale_x / len) / extents.height;
-
-    return true;
 }
 
 void pdf_get_v_text_width_and_height(cairo_t *cr, const std::vector<std::string>& chars, double& text_width, double& text_height)
@@ -696,6 +674,59 @@ void pdf_get_v_text_width_and_height(cairo_t *cr, const std::vector<std::string>
             text_height += extents.height;
         }
     }
+}
+
+// Do scaling for drawing horizontal text
+bool pdf_scaling_h_text(cairo_t *cr, const char *utf8_text, double width, double height, double& font_size, double& scale_x, double& scale_y, double threshold)
+{
+    scale_x = scale_y = 1;
+    font_size = 10;
+
+    if (!*utf8_text)
+        return false;
+
+    // Split characters
+    std::vector<std::string> chars;
+    u8_split_chars(chars, utf8_text);
+
+    // Adjust the font size and scale
+    cairo_text_extents_t extents;
+    cairo_font_extents_t font_extents;
+    for (;;)
+    {
+        cairo_set_font_size(cr, font_size);
+        double text_width, text_height;
+        pdf_get_h_text_width_and_height(cr, chars, text_width, text_height);
+
+        if (font_size >= 10000 || !extents.width || !extents.height)
+            return false;
+
+        if (text_width * scale_x < width * 0.9 && text_height * scale_y < height * 0.9)
+            font_size *= 1.1;
+        else if (threshold < 1.1)
+            break;
+        else if (text_width * scale_x < width * 0.9)
+            scale_x *= 1.1;
+        else if (text_height * scale_y < height * 0.9)
+            scale_y *= 1.1;
+        else
+            break;
+    }
+
+    std::string text = utf8_text;
+    size_t len = u8_len(text.c_str());
+
+    cairo_set_font_size(cr, font_size);
+
+    double text_width, text_height;
+    pdf_get_h_text_width_and_height(cr, chars, text_width, text_height);
+
+    if ((text_width * scale_x / len) / (text_height * scale_y) > threshold)
+        scale_x = threshold * (text_height * scale_y) * len / text_width;
+    if ((text_height * scale_y) / (text_width * scale_x / len) > threshold)
+        scale_y = threshold * (text_width * scale_x / len) / text_height;
+
+    return true;
 }
 
 // Do scaling for drawing vertical text
@@ -757,17 +788,18 @@ void pdf_draw_h_char(cairo_t *cr, const char *text_char, double x, double y, dou
     cairo_text_extents(cr, text_char, &extents);
     cairo_font_extents(cr, &font_extents);
 
-    if (0)
+    if (1)
     {
         // ボックスを描画
         cairo_save(cr); // 描画状態を保存
         {
+            double x0 = x + extents.x_bearing * scale_x;
             double scaled_width = extents.width * scale_x;
             double scaled_height = font_extents.height * scale_y;
 
             // 緑色のボックスを描画
             cairo_set_source_rgb(cr, 0, 0.5, 0);  // 緑色
-            cairo_rectangle(cr, x, y, scaled_width, scaled_height);
+            cairo_rectangle(cr, x0, y, scaled_width, scaled_height);
             cairo_stroke(cr);  // ボックスを描画
         }
         cairo_restore(cr); // 描画状態を元に戻す
@@ -776,10 +808,12 @@ void pdf_draw_h_char(cairo_t *cr, const char *text_char, double x, double y, dou
         cairo_save(cr); // 描画状態を保存
         {
             // 青い線でベースラインを描画
+            double x0 = x + extents.x_bearing * scale_x;
+            double x1 = x0 + extents.width * scale_x;
             double baseline_y = y + font_extents.ascent * scale_y;
             cairo_set_source_rgb(cr, 0, 0, 1);
-            cairo_move_to(cr, x, baseline_y);
-            cairo_line_to(cr, x + extents.width * scale_x, baseline_y);
+            cairo_move_to(cr, x0, baseline_y);
+            cairo_line_to(cr, x1, baseline_y);
             cairo_stroke(cr);  // 線を描画
         }
         cairo_restore(cr); // 描画状態を元に戻す
@@ -789,7 +823,7 @@ void pdf_draw_h_char(cairo_t *cr, const char *text_char, double x, double y, dou
     cairo_save(cr); // 描画状態を保存
     {
         // テキストの基準位置を調整
-        double x_pos = x - extents.x_bearing * scale_x;
+        double x_pos = x;
         double y_pos = y + font_extents.ascent * scale_y;
         cairo_translate(cr, x_pos, y_pos);  // 指定位置に移動
 
@@ -984,7 +1018,7 @@ bool pdf_draw_h_text(cairo_t *cr, const char *text, double x0, double y0, double
         double y = y0 + (height - font_extents.height * scale_y) / 2;
         pdf_draw_h_char(cr, text_char.c_str(), x, y, scale_x, scale_y, extents, font_extents);
 
-        x += extents.width * scale_x;
+        x += extents.x_advance * scale_x;
     }
 
     return true;
