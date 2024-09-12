@@ -1013,7 +1013,7 @@ bool pdf_draw_v_text(cairo_t *cr, const char *text, double x0, double y0, double
     // Draw each character one by one
     double y = y0;
     auto each_blank_height = (height - text_height) / (chars.size() + 1);
-    while (each_blank_height < pt_from_mm(4))
+    while (each_blank_height < font_size / 5)
     {
         scale_x *= 0.95;
         scale_y *= 0.95;
