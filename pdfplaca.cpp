@@ -1321,25 +1321,28 @@ bool pdfplaca_do_it(const _TCHAR *out_file, const _TCHAR *out_text, const _TCHAR
 
     if (g_letters_per_page == -1)
     {
-        // Draw page
+        // Draw page (one page only)
         pdfplaca_draw_page(cr, utf8_text.c_str(), page_width, page_height, printable_width, printable_height, margin);
-        cairo_show_page(cr);
     }
     else if (g_letters_per_page > 0)
     {
+        // Delete spaces
         mstr_replace_all(utf8_text, " ", "");
         mstr_replace_all(utf8_text, "\t", "");
         mstr_replace_all(utf8_text, "\r", "");
         mstr_replace_all(utf8_text, "\n", "");
         mstr_replace_all(utf8_text, u8"　", "");
 
+        // Split characters
         std::vector<std::string> chars;
         u8_split_chars(chars, utf8_text.c_str());
 
+        // Draw pages
         size_t num_page = (chars.size() + g_letters_per_page - 1) / g_letters_per_page;
         size_t iChar = 0;
         for (size_t iPage = 0; iPage < num_page; ++iPage)
         {
+            // Limit the number of characters per page
             std::string str;
             for (; iChar < (iPage + 1) * g_letters_per_page; ++iChar)
             {
@@ -1347,6 +1350,7 @@ bool pdfplaca_do_it(const _TCHAR *out_file, const _TCHAR *out_text, const _TCHAR
                     str += chars[iChar];
             }
 
+            // Draw page
             pdfplaca_draw_page(cr, str.c_str(), page_width, page_height, printable_width, printable_height, margin);
             cairo_show_page(cr);
         }
