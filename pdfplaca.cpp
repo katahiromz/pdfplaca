@@ -27,7 +27,7 @@
 // Show version info
 void pdfplaca_version(void)
 {
-    std::printf("pdfplaca by katahiromz Version 0.4\n");
+    std::printf("pdfplaca by katahiromz Version 0.5\n");
 }
 
 // Get the default font
@@ -1267,7 +1267,7 @@ bool pdfplaca_do_it(const _TCHAR *out_file, const _TCHAR *out_text, const _TCHAR
 
     // Initialize Cairo
 #ifdef UNICODE
-    std::string utf8_file = ansi_from_wide(out_file, CP_UTF8);
+    std::string utf8_file = ansi_from_wide(out_file, CP_ACP);
 #else
     std::string utf8_file = out_file;
 #endif
