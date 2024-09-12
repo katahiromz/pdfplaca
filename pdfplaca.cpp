@@ -1354,7 +1354,7 @@ bool pdfplaca_do_it(const _TCHAR *out_file, const _TCHAR *out_text, const _TCHAR
     // フォントの種類を表示する。
     g_fixed_pitch_font = pdf_is_font_fixed_pitch(cr);
     if (g_fixed_pitch_font)
-        printf("fixed pitch font\n");
+        printf("fixed-pitch font\n");
     else
         printf("proportional font\n");
 
@@ -1409,6 +1409,7 @@ bool pdfplaca_do_it(const _TCHAR *out_file, const _TCHAR *out_text, const _TCHAR
     return true;
 }
 
+// フォントを列挙するコールバック関数。
 static
 INT CALLBACK
 EnumFontFamProc(
