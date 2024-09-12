@@ -1351,19 +1351,22 @@ bool pdfplaca_do_it(const _TCHAR *out_file, const _TCHAR *out_text, const _TCHAR
     // Unescape string
     utf8_text = mstr_unescape(utf8_text.c_str());
 
+    // フォントの種類を表示する。
     g_fixed_pitch_font = pdf_is_font_fixed_pitch(cr);
     if (g_fixed_pitch_font)
         printf("fixed pitch font\n");
     else
         printf("proportional font\n");
 
-    if (g_letters_per_page == -1)
+    if (g_letters_per_page == -1) // 1ページの文字数に制限がない？
     {
-        // Draw page (one page only)
+        // ページ番号を表示する。
         printf("Page %d\n", 1);
+
+        // Draw page (one page only)
         pdfplaca_draw_page(cr, utf8_text.c_str(), page_width, page_height, printable_width, printable_height, margin);
     }
-    else if (g_letters_per_page > 0)
+    else if (g_letters_per_page > 0) // 制限がある？
     {
         // Delete spaces
         mstr_replace_all(utf8_text, " ", "");
@@ -1380,7 +1383,9 @@ bool pdfplaca_do_it(const _TCHAR *out_file, const _TCHAR *out_text, const _TCHAR
         size_t num_page = (chars.size() + g_letters_per_page - 1) / g_letters_per_page;
         for (size_t iPage = 0, iChar = 0; iPage < num_page; ++iPage)
         {
+            // ページ番号を表示する。
             printf("Page %d\n", int(iPage + 1));
+
             // Limit the number of characters per page
             std::string str;
             for (; iChar < (iPage + 1) * g_letters_per_page; ++iChar)
