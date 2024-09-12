@@ -545,7 +545,7 @@ bool pdf_is_font_korean(cairo_t *cr)
 {
     cairo_set_font_size(cr, 30);
     cairo_text_extents_t extents;
-    cairo_text_extents(cr, u8"沉", &extents);
+    cairo_text_extents(cr, u8"작", &extents);
     return !(extents.width < 1 || extents.height < 1);
 }
 
@@ -556,14 +556,31 @@ inline bool is_nearly_equal(double x0, double x1)
 }
 
 // 選択中のフォントは等幅フォントか？
-bool pdf_is_font_fixed_pitch(cairo_t *cr)
+bool pdf_is_fixed_pitch_font(cairo_t *cr)
 {
     cairo_text_extents_t extents;
-    cairo_text_extents(cr, "ww", &extents);
+    cairo_text_extents(cr, "wwww", &extents);
     double x0 = extents.x_advance;
-    cairo_text_extents(cr, u8"目", &extents);
-    double x1 = extents.x_advance;
-    return is_nearly_equal(x0, x1);
+    if (pdf_is_font_japanese(cr))
+    {
+        cairo_text_extents(cr, u8"目目", &extents);
+        return is_nearly_equal(x0, extents.x_advance);
+    }
+    else if (pdf_is_font_chinese(cr))
+    {
+        cairo_text_extents(cr, u8"沉沉", &extents);
+        return is_nearly_equal(x0, extents.x_advance);
+    }
+    else if (pdf_is_font_korean(cr))
+    {
+        cairo_text_extents(cr, u8"작작", &extents);
+        return is_nearly_equal(x0, extents.x_advance);
+    }
+    else
+    {
+        cairo_text_extents(cr, "iiii", &extents);
+        return is_nearly_equal(x0, extents.x_advance);
+    }
 }
 
 // PDFに出力したときのテキストの幅の合計を返す。
@@ -1352,7 +1369,7 @@ bool pdfplaca_do_it(const _TCHAR *out_file, const _TCHAR *out_text, const _TCHAR
     utf8_text = mstr_unescape(utf8_text.c_str());
 
     // フォントの種類を表示する。
-    g_fixed_pitch_font = pdf_is_font_fixed_pitch(cr);
+    g_fixed_pitch_font = pdf_is_fixed_pitch_font(cr);
     if (g_fixed_pitch_font)
         printf("fixed-pitch font\n");
     else
