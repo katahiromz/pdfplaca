@@ -27,7 +27,7 @@
 // Show version info
 void pdfplaca_version(void)
 {
-    std::printf("pdfplaca by katahiromz Version 0.3\n");
+    std::printf("pdfplaca by katahiromz Version 0.4\n");
 }
 
 // Get the default font
@@ -1296,6 +1296,7 @@ bool pdfplaca_do_it(const _TCHAR *out_file, const _TCHAR *out_text, const _TCHAR
         {
             utf8_text = u8"   Error:   \nNot Japanese font";
             utf8_font_name = "Arial";
+            g_vertical = false;
         }
     }
     else if (u8_is_chinese_text(utf8_text.c_str()))
@@ -1304,6 +1305,7 @@ bool pdfplaca_do_it(const _TCHAR *out_file, const _TCHAR *out_text, const _TCHAR
         {
             utf8_text = u8"   Error:   \nNot Chinese font";
             utf8_font_name = "Arial";
+            g_vertical = false;
         }
     }
     else if (u8_is_korean_text(utf8_text.c_str()))
@@ -1312,6 +1314,7 @@ bool pdfplaca_do_it(const _TCHAR *out_file, const _TCHAR *out_text, const _TCHAR
         {
             utf8_text = u8"   Error:   \nNot Korean font";
             utf8_font_name = "Arial";
+            g_vertical = false;
         }
     }
     cairo_select_font_face(cr, utf8_font_name.c_str(), CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_NORMAL);
