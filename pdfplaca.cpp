@@ -312,6 +312,12 @@ bool u8_contains_one_of(const char *ptr, const char *char_set)
     return false;
 }
 
+// 文字はスペースか？
+static inline bool u8_is_space(const char *ptr)
+{
+    return u8_contains_one_of(ptr, u8" 　");
+}
+
 // カッコ（タイプ1）か？
 static inline bool u8_is_paren_type_1(const char *ptr)
 {
@@ -642,7 +648,13 @@ void pdf_get_v_text_width_and_height(cairo_t *cr, const std::vector<std::string>
     for (auto& text_char : chars)
     {
         cairo_text_extents(cr, text_char.c_str(), &extents);
-        if (u8_is_small_kana(text_char.c_str())) // 小さいカナか？
+        if (u8_is_space(text_char.c_str())) // スペースか？
+        {
+            if (text_width < extents.width)
+                text_width = extents.width;
+            text_height += extents.x_advance;
+        }
+        else if (u8_is_small_kana(text_char.c_str())) // 小さいカナか？
         {
             if (text_width < extents.width * SMALL_KANA_RATIO)
                 text_width = extents.width * SMALL_KANA_RATIO;
@@ -1087,7 +1099,9 @@ bool pdf_draw_v_text(cairo_t *cr, const char *text, double x0, double y0, double
 
         cairo_text_extents(cr, text_char.c_str(), &extents);
 
-        if (u8_is_small_kana(text_char.c_str()))
+        if (u8_is_space(text_char.c_str()))
+            y += extents.x_advance * scale_y;
+        else if (u8_is_small_kana(text_char.c_str()))
             y += extents.height * scale_y * SMALL_KANA_RATIO;
         else if (u8_is_hyphen_dash(text_char.c_str()))
             y += extents.width * scale_y;
@@ -1396,6 +1410,9 @@ bool pdfplaca_do_it(const _TCHAR *out_file, const _TCHAR *out_text, const _TCHAR
 
     // Unescape string
     utf8_text = mstr_unescape(utf8_text.c_str());
+
+    // タブを3スペースに変換する。
+    mstr_replace_all(utf8_text, u8"\t", u8"   ");
 
     // フォントの種類を表示する。
     g_fixed_pitch_font = pdf_is_fixed_pitch_font(cr);
