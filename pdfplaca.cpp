@@ -1035,9 +1035,14 @@ bool pdf_draw_h_text(cairo_t *cr, const char *text, double x0, double y0, double
 std::string u8_locale_map_text(const char *text)
 {
     std::wstring wide = wide_from_ansi(text, CP_UTF8);
+    mstr_replace_all(wide, L" ", L"\x0001");
+    mstr_replace_all(wide, L"　", L"\x0002");
     WCHAR szMapped[MAX_PATH];
     LCMapStringW(GetUserDefaultLCID(), LCMAP_FULLWIDTH, wide.c_str(), -1, szMapped, _countof(szMapped));
-    return ansi_from_wide(szMapped, CP_UTF8);
+    wide = szMapped;
+    mstr_replace_all(wide, L"\x0001", L" ");
+    mstr_replace_all(wide, L"\x0002", L"　");
+    return ansi_from_wide(wide.c_str(), CP_UTF8);
 }
 
 // Draw vertical scaled text
