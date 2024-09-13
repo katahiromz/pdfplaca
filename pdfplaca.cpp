@@ -27,7 +27,7 @@
 // Show version info
 void pdfplaca_version(void)
 {
-    std::printf("pdfplaca by katahiromz Version 0.8\n");
+    std::printf("pdfplaca by katahiromz Version 0.85\n");
 }
 
 // Get the default font
@@ -890,7 +890,7 @@ void pdf_draw_v_char(cairo_t *cr, const char *text_char, double x, double y, dou
         // ボックスを描画
         cairo_save(cr); // 描画状態を保存
         {
-            double x_pos = x - scaled_width / 2; // 中央揃え。
+            double x_pos = x - extents.x_advance * scale_x / 2 + extents.x_bearing * scale_x; // 中央揃え。
             double y_pos = y;
 
             // 緑色のボックスを描画
@@ -975,7 +975,7 @@ void pdf_draw_v_char(cairo_t *cr, const char *text_char, double x, double y, dou
         else
         {
             // テキストの基準位置を調整
-            double x_pos = x - (extents.x_bearing * scale_x + scaled_width / 2);
+            double x_pos = x - extents.x_advance * scale_x / 2;
             double y_pos = y - extents.y_bearing * scale_y;
             cairo_translate(cr, x_pos, y_pos);  // 指定位置に移動
 
