@@ -35,7 +35,7 @@
 // Show version info
 void pdfplaca_version(void)
 {
-    std::printf("pdfplaca by katahiromz Version 0.85\n");
+    std::printf("pdfplaca by katahiromz Version 0.86\n");
 }
 
 // Get the default font
@@ -571,7 +571,7 @@ bool pdf_is_font_korean(cairo_t *cr)
 
 // 原点を中心として複素数xを回転する。
 template <typename T>
-inline
+inline std::complex<T>
 complex_rotate(std::complex<T> c, const T& theta)
 {
     return c * std::polar<T>(1, theta);
@@ -579,7 +579,7 @@ complex_rotate(std::complex<T> c, const T& theta)
 
 // 複素数xを平行移動する。
 template <typename T>
-inline
+inline std::complex<T>
 complex_translate(std::complex<T> c, const T& x0, const T& y0)
 {
     return c + std::complex<T>(x0, y0);
@@ -1450,9 +1450,55 @@ bool pdfplaca_do_it(const _TCHAR *out_file, const _TCHAR *out_text, const _TCHAR
     else
         printf("proportional font\n");
 
-    if (0) // ちょっとしたテストを行う。
+    if (0) // 必要ならば、ちょっとしたテストを行う。
     {
-        //...
+        cairo_move_to(cr, 150, 100);
+        cairo_line_to(cr, 150, 200);
+        cairo_move_to(cr, 100, 150);
+        cairo_line_to(cr, 200, 150);
+        cairo_set_source_rgb(cr, 1, 0, 0);
+        cairo_stroke(cr);
+
+        auto text = u8"あ";
+        cairo_set_font_size(cr, 30);
+
+        cairo_text_extents_t extents;
+        cairo_text_extents(cr, text, &extents);
+
+        cairo_font_extents_t font_extents;
+        cairo_font_extents(cr, &font_extents);
+
+        double scale_x = 2, scale_y = 3;
+
+        double x = 150, y = 150;
+#if 0 // -90度回転かつ上下反転
+        cairo_matrix_t font_matrix =
+        {
+            0, scale_y,
+            scale_x, 0,
+            x + (font_extents.height - extents.x_bearing) * scale_x,
+            y - font_extents.height * scale_y
+        };
+#elif 0 // +90度回転
+        cairo_matrix_t font_matrix =
+        {
+            0, scale_y,
+            -scale_x, 0,
+            x + extents.x_bearing * scale_x,
+            y - font_extents.height * scale_y
+        };
+#else // 移動なし
+        cairo_matrix_t font_matrix =
+        {
+            scale_x, 0,
+            0, scale_y,
+            x, y - font_extents.descent * scale_y
+        };
+#endif
+        cairo_set_matrix(cr, &font_matrix);
+        cairo_set_source_rgb(cr, 0, 0, 0);
+        cairo_move_to(cr, 0, 0);
+        cairo_show_text(cr, text);
     }
     else if (g_letters_per_page == -1) // 1ページの文字数に制限がない？
     {
