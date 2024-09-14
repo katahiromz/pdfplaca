@@ -1,23 +1,25 @@
-// pdfplaca.cpp --- Make a PDF placard
-#include <cairo.h>
-#include <cairo-pdf.h>
-#include <cstdio>
-#include <cstdint>
-#include <cmath>
-#include <cassert>
-#include <vector>
-#include <string>
-#include <complex>
-#include <algorithm>
+// pdfplaca.cpp --- Make a PDF placard by katahiromz
+// License: Apache 2.0
+#include <cairo.h>          // Cairo Graphic Library
+#include <cairo-pdf.h>      // Cairo PDF
+#include <cstdlib>          // C Standard Library
+#include <cstdio>           // C Standard Input/Output Library
+#include <cstdint>          // C Standard Integers
+#include <cmath>            // C Math Library
+#include <cassert>          // For assert macro
+#include <vector>           // For std::vector
+#include <string>           // For std::string and std::wstring
+#include <complex>          // For std::complex
+#include <algorithm>        // For standard algorithm
 
-#include <windows.h>
-#include <windowsx.h>
-#include <shlwapi.h>
-#include <tchar.h>
-#include <strsafe.h>
+#include <windows.h>        // Windows standard header
+#include <windowsx.h>       // Windows helper macros
+#include <shlwapi.h>        // Shell Light-weight API
+#include <tchar.h>          // Generic text mapping
+#include <strsafe.h>        // Safe string
 
-#include "color_value.h"
-#include "page_size.h"
+#include "color_value.h"    // Color values
+#include "page_size.h"      // Page sizes
 
 // For detecting memory leak (for MSVC only)
 #if defined(_MSC_VER) && !defined(NDEBUG) && !defined(_CRTDBG_MAP_ALLOC)
