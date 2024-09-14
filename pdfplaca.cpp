@@ -1,5 +1,6 @@
 // pdfplaca.cpp --- Make a PDF placard by katahiromz
 // License: Apache 2.0
+
 #define _CRT_SECURE_NO_DEPRECATE    // We use deprecate functions for compatibility
 #define _USE_MATH_DEFINES           // We use <cmath> M_PI constant
 
