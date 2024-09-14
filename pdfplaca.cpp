@@ -1,7 +1,8 @@
 // pdfplaca.cpp --- Make a PDF placard by katahiromz
 // License: Apache 2.0
-#include <cairo.h>          // Cairo Graphic Library
-#include <cairo-pdf.h>      // Cairo PDF
+#define _CRT_SECURE_NO_DEPRECATE    // We use deprecate functions for compatibility
+#define _USE_MATH_DEFINES           // We use <cmath> M_PI constant
+
 #include <cstdlib>          // C Standard Library
 #include <cstdio>           // C Standard Input/Output Library
 #include <cstdint>          // C Standard Integers
@@ -12,20 +13,23 @@
 #include <complex>          // For std::complex
 #include <algorithm>        // For standard algorithm
 
+// For detecting memory leak (for MSVC only)
+#if defined(_MSC_VER) && !defined(NDEBUG) && !defined(_CRTDBG_MAP_ALLOC)
+    #define _CRTDBG_MAP_ALLOC
+    #include <crtdbg.h>     // For C run-time debugging
+#endif
+
+#include <cairo.h>          // Cairo Graphic Library
+#include <cairo-pdf.h>      // Cairo PDF
+
 #include <windows.h>        // Windows standard header
 #include <windowsx.h>       // Windows helper macros
 #include <shlwapi.h>        // Shell Light-weight API
 #include <tchar.h>          // Generic text mapping
-#include <strsafe.h>        // Safe string
+#include <strsafe.h>        // Safe string manipulation
 
 #include "color_value.h"    // Color values
 #include "page_size.h"      // Page sizes
-
-// For detecting memory leak (for MSVC only)
-#if defined(_MSC_VER) && !defined(NDEBUG) && !defined(_CRTDBG_MAP_ALLOC)
-    #define _CRTDBG_MAP_ALLOC
-    #include <crtdbg.h>
-#endif
 
 // Show version info
 void pdfplaca_version(void)
