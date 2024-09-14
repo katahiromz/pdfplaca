@@ -7,6 +7,7 @@
 #include <cassert>
 #include <vector>
 #include <string>
+#include <complex>
 #include <algorithm>
 
 #include <windows.h>
@@ -559,6 +560,22 @@ bool pdf_is_font_korean(cairo_t *cr)
     cairo_text_extents(cr, u8"작", &extents);
     cairo_restore(cr);
     return !(extents.width < 1 || extents.height < 1);
+}
+
+// 原点を中心として複素数xを回転する。
+template <typename T>
+inline
+complex_rotate(std::complex<T> c, const T& theta)
+{
+    return c * std::polar<T>(1, theta);
+}
+
+// 複素数xを平行移動する。
+template <typename T>
+inline
+complex_translate(std::complex<T> c, const T& x0, const T& y0)
+{
+    return c + std::complex<T>(x0, y0);
 }
 
 // 二つの値がほとんど等しいか？
@@ -1426,7 +1443,11 @@ bool pdfplaca_do_it(const _TCHAR *out_file, const _TCHAR *out_text, const _TCHAR
     else
         printf("proportional font\n");
 
-    if (g_letters_per_page == -1) // 1ページの文字数に制限がない？
+    if (0) // ちょっとしたテストを行う。
+    {
+        //...
+    }
+    else if (g_letters_per_page == -1) // 1ページの文字数に制限がない？
     {
         // ページ番号を表示する。
         printf("Page %d\n", 1);
