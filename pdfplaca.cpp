@@ -1123,13 +1123,19 @@ bool pdf_draw_h_text(cairo_t *cr, const char *text, double x0, double y0, double
 std::string u8_locale_map_text(const char *text)
 {
     std::wstring wide = wide_from_ansi(text, CP_UTF8);
-    mstr_replace_all(wide, L" ", L"\x0001"); // 半角スペース。
-    mstr_replace_all(wide, L"　", L"\x0002"); // 全角スペース。
+    if (!g_fixed_pitch_font)
+    {
+        mstr_replace_all(wide, L" ", L"\x0001"); // 半角スペース。
+        mstr_replace_all(wide, L"　", L"\x0002"); // 全角スペース。
+    }
     static WCHAR s_szMapped[1024];
     LCMapStringW(GetUserDefaultLCID(), LCMAP_FULLWIDTH, wide.c_str(), -1, s_szMapped, _countof(s_szMapped));
     wide = s_szMapped;
-    mstr_replace_all(wide, L"\x0001", L" "); // 半角スペースを元に戻す。
-    mstr_replace_all(wide, L"\x0002", L"　"); // 全角スペースを元に戻す。
+    if (!g_fixed_pitch_font)
+    {
+        mstr_replace_all(wide, L"\x0001", L" "); // 半角スペースを元に戻す。
+        mstr_replace_all(wide, L"\x0002", L"　"); // 全角スペースを元に戻す。
+    }
     return ansi_from_wide(wide.c_str(), CP_UTF8);
 }
 
@@ -1263,18 +1269,49 @@ bool pdf_draw_v_text_fixed(cairo_t *cr, const char *text, double x0, double y0, 
 
         double x = x0 + width / 2 - extents.x_advance * scale_x / 2;
 
+        // 変換行列や位置などを調整する。
         cairo_matrix_t matrix;
         double dx = 0, dy = 0;
-        if (u8_is_hyphen_dash(text_char.c_str()))
+        if (u8_is_small_kana(text_char.c_str())) // 小さいカナか？
+        {
+            dx = font_extents.height * scale_x * 0.27;
+            dy = -font_extents.height * scale_y * 0.3;
+            cairo_matrix_init(&matrix,
+                scale_x * 0.75, 0, 0, scale_y * 0.75,
+                x + dx,
+                y - font_extents.descent * scale_y + font_extents.height * scale_y + dy);
+        }
+        else if (u8_is_hyphen_dash(text_char.c_str())) // 横棒か？
         {
             cairo_matrix_init(&matrix,
                 0, scale_y, scale_x, 0,
                 x + (font_extents.height - font_extents.descent) * scale_x + dx,
                 y - font_extents.height * scale_y + font_extents.height * scale_y + dy);
         }
+        else if (u8_is_paren_type_1(text_char.c_str())) // カッコ（タイプ1）か？
+        {
+            cairo_matrix_init(&matrix,
+                0, scale_y, -scale_x, 0,
+                x + font_extents.descent * scale_x + dx,
+                y + dy);
+        }
+        else if (u8_is_paren_type_2(text_char.c_str())) // カッコ（タイプ2）か？
+        {
+            cairo_matrix_init(&matrix,
+                0, scale_y, -scale_x, 0,
+                x + font_extents.descent * scale_x + dx,
+                y + dy);
+        }
+        else if (u8_is_paren_type_3(text_char.c_str())) // カッコ（タイプ3）か？
+        {
+            cairo_matrix_init(&matrix,
+                0, scale_y, -scale_x, 0,
+                x + font_extents.descent * scale_x + dx,
+                y + dy);
+        }
         else
         {
-            if (u8_is_comma_period(text_char.c_str()))
+            if (u8_is_comma_period(text_char.c_str())) // 句読点か？
             {
                 dx = extents.x_advance * scale_x * 0.5;
                 dy = -extents.x_advance * scale_y * 0.5;
