@@ -1167,10 +1167,8 @@ bool pdf_draw_v_text(cairo_t *cr, const char *text, double x0, double y0, double
     text_width *= scale_x;
     text_height *= scale_y;
 
-    // Draw each character one by one
-    double y = y0;
     auto each_blank_height = (height - text_height) / (chars.size() + 1);
-    while (each_blank_height < font_size / 5)
+    while (each_blank_height <= font_size * 0.1)
     {
         scale_x *= 0.95;
         scale_y *= 0.95;
@@ -1181,6 +1179,8 @@ bool pdf_draw_v_text(cairo_t *cr, const char *text, double x0, double y0, double
         each_blank_height = (height - text_height) / (chars.size() + 1);
     }
 
+    // Draw each character one by one
+    double y = y0;
     for (size_t ich = 0; ich < chars.size(); ++ich)
     {
         y += each_blank_height;
@@ -1240,15 +1240,13 @@ bool pdf_draw_v_text_fixed(cairo_t *cr, const char *text, double x0, double y0, 
     pdf_get_v_text_width_and_height_fixed(cr, chars, text_width, text_height);
     text_width *= scale_x;
     text_height *= scale_y;
-
-    // Draw each character one by one
     auto each_blank_height = (height - text_height) / (chars.size() + 1);
-    while (each_blank_height < font_size / 5)
+    while (each_blank_height <= 0)
     {
         scale_x *= 0.95;
         scale_y *= 0.95;
 
-        pdf_get_v_text_width_and_height_fixed(cr, chars, text_width, text_height);
+        pdf_get_v_text_width_and_height(cr, chars, text_width, text_height);
         text_width *= scale_x;
         text_height *= scale_y;
         each_blank_height = (height - text_height) / (chars.size() + 1);
