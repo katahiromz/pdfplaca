@@ -35,7 +35,7 @@
 // Show version info
 void pdfplaca_version(void)
 {
-    std::printf("pdfplaca by katahiromz Version 0.86\n");
+    std::printf("pdfplaca by katahiromz Version 0.89\n");
 }
 
 // Get the default font
@@ -1472,30 +1472,21 @@ bool pdfplaca_do_it(const _TCHAR *out_file, const _TCHAR *out_text, const _TCHAR
 
         double x = 150, y = 150;
 #if 0 // -90度回転かつ上下反転
-        cairo_matrix_t font_matrix =
-        {
-            0, scale_y,
-            scale_x, 0,
+        cairo_matrix_init(&matrix,
+            0, scale_y, scale_x, 0,
             x + (font_extents.height - extents.x_bearing) * scale_x,
-            y - font_extents.height * scale_y
-        };
+            y - font_extents.height * scale_y);
 #elif 0 // +90度回転
-        cairo_matrix_t font_matrix =
-        {
-            0, scale_y,
-            -scale_x, 0,
+        cairo_matrix_init(&matrix,
+            0, scale_y, -scale_x, 0,
             x + extents.x_bearing * scale_x,
-            y - font_extents.height * scale_y
-        };
+            y - font_extents.height * scale_y);
 #else // 移動なし
-        cairo_matrix_t font_matrix =
-        {
-            scale_x, 0,
-            0, scale_y,
-            x, y - font_extents.descent * scale_y
-        };
+        cairo_matrix_init(&matrix,
+            scale_x, 0, 0, scale_y,
+            x, y - font_extents.descent * scale_y);
 #endif
-        cairo_set_matrix(cr, &font_matrix);
+        cairo_set_matrix(cr, &matrix);
         cairo_set_source_rgb(cr, 0, 0, 0);
         cairo_move_to(cr, 0, 0);
         cairo_show_text(cr, text);
