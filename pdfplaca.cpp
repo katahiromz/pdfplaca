@@ -1264,9 +1264,26 @@ bool pdf_draw_v_text_fixed(cairo_t *cr, const char *text, double x0, double y0, 
         double x = x0 + width / 2 - extents.x_advance * scale_x / 2;
 
         cairo_matrix_t matrix;
-        cairo_matrix_init(&matrix,
-            scale_x, 0, 0, scale_y,
-            x, y - font_extents.descent * scale_y + font_extents.height * scale_y);
+        double dx = 0, dy = 0;
+        if (u8_is_hyphen_dash(text_char.c_str()))
+        {
+            cairo_matrix_init(&matrix,
+                0, scale_y, scale_x, 0,
+                x + (font_extents.height - font_extents.descent) * scale_x + dx,
+                y - font_extents.height * scale_y + font_extents.height * scale_y + dy);
+        }
+        else
+        {
+            if (u8_is_comma_period(text_char.c_str()))
+            {
+                dx = extents.x_advance * scale_x * 0.5;
+                dy = -extents.x_advance * scale_y * 0.5;
+            }
+            cairo_matrix_init(&matrix,
+                scale_x, 0, 0, scale_y,
+                x + dx,
+                y - font_extents.descent * scale_y + font_extents.height * scale_y + dy);
+        }
         cairo_set_matrix(cr, &matrix);
 
         cairo_set_source_rgb(cr, 0, 0, 0);
