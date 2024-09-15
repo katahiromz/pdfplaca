@@ -35,7 +35,7 @@
 // Show version info
 void pdfplaca_version(void)
 {
-    std::printf("pdfplaca by katahiromz Version 0.95\n");
+    std::printf("pdfplaca by katahiromz Version 0.96\n");
 }
 
 // Get the default font
@@ -1269,11 +1269,11 @@ bool pdf_draw_v_text_fixed(cairo_t *cr, const char *text, double x0, double y0, 
 
         // 変換行列や位置などを調整する。
         cairo_matrix_t matrix;
-        double dx = 0, dy = 0;
+        double dx = 0, dy = g_y_adjust;
         if (u8_is_small_kana(text_char.c_str())) // 小さいカナか？
         {
-            dx = font_extents.height * scale_x * 0.27;
-            dy = -font_extents.height * scale_y * 0.3;
+            dx += font_extents.height * scale_x * 0.27;
+            dy += -font_extents.height * scale_y * 0.3;
             cairo_matrix_init(&matrix,
                 scale_x * 0.75, 0, 0, scale_y * 0.75,
                 x + dx,
@@ -1311,8 +1311,8 @@ bool pdf_draw_v_text_fixed(cairo_t *cr, const char *text, double x0, double y0, 
         {
             if (u8_is_comma_period(text_char.c_str())) // 句読点か？
             {
-                dx = extents.x_advance * scale_x * 0.5;
-                dy = -extents.x_advance * scale_y * 0.5;
+                dx += extents.x_advance * scale_x * 0.5;
+                dy += -extents.x_advance * scale_y * 0.5;
             }
             cairo_matrix_init(&matrix,
                 scale_x, 0, 0, scale_y,
@@ -1321,7 +1321,11 @@ bool pdf_draw_v_text_fixed(cairo_t *cr, const char *text, double x0, double y0, 
         }
         cairo_set_matrix(cr, &matrix);
 
-        cairo_set_source_rgb(cr, 0, 0, 0);
+        auto r = get_r_value(g_text_color);
+        auto g = get_g_value(g_text_color);
+        auto b = get_b_value(g_text_color);
+        cairo_set_source_rgb(cr, r / 255.0, g / 255.0, b / 255.0);
+
         cairo_move_to(cr, 0, 0);
         cairo_show_text(cr, text_char.c_str());
 
