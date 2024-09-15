@@ -35,7 +35,7 @@
 // Show version info
 void pdfplaca_version(void)
 {
-    std::printf("pdfplaca by katahiromz Version 0.96\n");
+    std::printf("pdfplaca by katahiromz Version 0.97\n");
 }
 
 // Get the default font
@@ -1607,7 +1607,10 @@ bool pdfplaca_do_it(const _TCHAR *out_file, const _TCHAR *out_text, const _TCHAR
     {
         if (!pdf_is_font_japanese(cr))
         {
-            utf8_text = u8"   Error:   \nNot Japanese font";
+            if (page_width < page_height)
+                utf8_text = u8"  Error:  \n  Not  \nJapanese\nfont";
+            else
+                utf8_text = u8"   Error:   \nNot Japanese font";
             utf8_font_name = "Arial";
             g_vertical = false;
         }
@@ -1616,7 +1619,10 @@ bool pdfplaca_do_it(const _TCHAR *out_file, const _TCHAR *out_text, const _TCHAR
     {
         if (!pdf_is_font_chinese(cr))
         {
-            utf8_text = u8"   Error:   \nNot Chinese font";
+            if (page_width < page_height)
+                utf8_text = u8"  Error:  \n  Not  \nChinese\nfont";
+            else
+                utf8_text = u8"   Error:   \nNot Chinese font";
             utf8_font_name = "Arial";
             g_vertical = false;
         }
@@ -1625,7 +1631,10 @@ bool pdfplaca_do_it(const _TCHAR *out_file, const _TCHAR *out_text, const _TCHAR
     {
         if (!pdf_is_font_korean(cr))
         {
-            utf8_text = u8"   Error:   \nNot Korean font";
+            if (page_width < page_height)
+                utf8_text = u8"  Error:  \n  Not  \nKorean\nfont";
+            else
+                utf8_text = u8"   Error:   \nNot Korean font";
             utf8_font_name = "Arial";
             g_vertical = false;
         }
