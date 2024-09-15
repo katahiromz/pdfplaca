@@ -35,7 +35,7 @@
 // Show version info
 void pdfplaca_version(void)
 {
-    std::printf("pdfplaca by katahiromz Version 0.9\n");
+    std::printf("pdfplaca by katahiromz Version 0.95\n");
 }
 
 // Get the default font
@@ -1168,7 +1168,7 @@ bool pdf_draw_v_text(cairo_t *cr, const char *text, double x0, double y0, double
     text_height *= scale_y;
 
     auto each_blank_height = (height - text_height) / (chars.size() + 1);
-    while (each_blank_height <= font_size * 0.1)
+    while (each_blank_height <= font_size * scale_y * 0.1)
     {
         scale_x *= 0.95;
         scale_y *= 0.95;
@@ -1690,6 +1690,9 @@ bool pdfplaca_do_it(const _TCHAR *out_file, const _TCHAR *out_text, const _TCHAR
 
         // Draw page (one page only)
         pdfplaca_draw_page(cr, utf8_text.c_str(), page_width, page_height, printable_width, printable_height, margin);
+
+        // New page
+        cairo_show_page(cr);
     }
     else if (g_letters_per_page > 0) // 制限がある？
     {
