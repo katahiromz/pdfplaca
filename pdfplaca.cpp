@@ -707,6 +707,21 @@ void pdf_get_v_text_width_and_height(cairo_t *cr, const std::vector<std::string>
     }
 }
 
+void pdf_get_v_text_width_and_height_fixed(cairo_t *cr, const std::vector<std::string>& chars, double& text_width, double& text_height)
+{
+    text_width = text_height = 0;
+    cairo_text_extents_t extents;
+    cairo_font_extents_t font_extents;
+    cairo_font_extents(cr, &font_extents);
+    for (auto& text_char : chars)
+    {
+        cairo_text_extents(cr, text_char.c_str(), &extents);
+        if (text_width < extents.width)
+            text_width = extents.width;
+        text_height += extents.x_advance;
+    }
+}
+
 // Do scaling for drawing horizontal text
 bool pdf_scaling_h_text(cairo_t *cr, const char *utf8_text, double width, double height, double& font_size, double& scale_x, double& scale_y, double threshold)
 {
@@ -800,6 +815,55 @@ bool pdf_scaling_v_text(cairo_t *cr, const char *utf8_text, double width, double
     double text_width, text_height;
     cairo_set_font_size(cr, font_size);
     pdf_get_v_text_width_and_height(cr, chars, text_width, text_height);
+
+    if ((text_width * scale_x) / (text_height * scale_y / len) > threshold)
+        scale_x = threshold * (text_height * scale_y / len) / text_width;
+    else if ((text_height * scale_y / len) / (text_width * scale_x) > threshold)
+        scale_y = threshold * (text_width * scale_x) * len / text_height;
+
+    return true;
+}
+
+// Do scaling for drawing vertical text (fixed-pitch)
+bool pdf_scaling_v_text_fixed(cairo_t *cr, const char *utf8_text, double width, double height, double& font_size, double& scale_x, double& scale_y, double threshold)
+{
+    scale_x = scale_y = 1;
+    font_size = 10;
+
+    if (!*utf8_text)
+        return false;
+
+    // Split characters
+    std::vector<std::string> chars;
+    u8_split_chars(chars, utf8_text);
+
+    // Adjust the font size and scale
+    for (;;)
+    {
+        double text_width, text_height;
+        cairo_set_font_size(cr, font_size);
+        pdf_get_v_text_width_and_height_fixed(cr, chars, text_width, text_height);
+
+        if (font_size >= 10000 || !text_width || !text_height)
+            return false;
+
+        if (text_width * scale_x < width * 0.95 && text_height * scale_y < height * 0.95)
+            font_size *= 1.05;
+        else if (threshold < 1.1)
+            break;
+        else if (text_width * scale_x < width * 0.95)
+            scale_x *= 1.05;
+        else if (text_height * scale_y < height * 0.95)
+            scale_y *= 1.05;
+        else
+            break;
+    }
+
+    size_t len = chars.size();
+
+    double text_width, text_height;
+    cairo_set_font_size(cr, font_size);
+    pdf_get_v_text_width_and_height_fixed(cr, chars, text_width, text_height);
 
     if ((text_width * scale_x) / (text_height * scale_y / len) > threshold)
         scale_x = threshold * (text_height * scale_y / len) / text_width;
@@ -1143,6 +1207,78 @@ bool pdf_draw_v_text(cairo_t *cr, const char *text, double x0, double y0, double
     return true;
 }
 
+// Draw vertical scaled text (fixed-pitch)
+bool pdf_draw_v_text_fixed(cairo_t *cr, const char *text, double x0, double y0, double width, double height, double threshold)
+{
+    if (!*text)
+        return false;
+
+    // Locale mapping
+    std::string mapped_text;
+    if (pdf_is_font_japanese(cr) || pdf_is_font_chinese(cr) || pdf_is_font_korean(cr))
+        mapped_text = u8_locale_map_text(text);
+    else
+        mapped_text = text;
+
+    // Calculate scaling and font size
+    double font_size, scale_x, scale_y;
+    if (!pdf_scaling_v_text_fixed(cr, mapped_text.c_str(), width, height, font_size, scale_x, scale_y, threshold))
+        return false;
+
+    // Split to characters
+    std::vector<std::string> chars;
+    u8_split_chars(chars, mapped_text.c_str());
+
+    // get text height
+    double text_width, text_height;
+    pdf_get_v_text_width_and_height_fixed(cr, chars, text_width, text_height);
+    text_width *= scale_x;
+    text_height *= scale_y;
+
+    // Draw each character one by one
+    auto each_blank_height = (height - text_height) / (chars.size() + 1);
+    while (each_blank_height < font_size / 5)
+    {
+        scale_x *= 0.95;
+        scale_y *= 0.95;
+
+        pdf_get_v_text_width_and_height_fixed(cr, chars, text_width, text_height);
+        text_width *= scale_x;
+        text_height *= scale_y;
+        each_blank_height = (height - text_height) / (chars.size() + 1);
+    }
+
+    double y = y0;
+    for (size_t ich = 0; ich < chars.size(); ++ich)
+    {
+        y += each_blank_height;
+
+        auto& text_char = chars[ich];
+
+        cairo_text_extents_t extents;
+        cairo_text_extents(cr, text_char.c_str(), &extents);
+
+        cairo_font_extents_t font_extents;
+        cairo_font_extents(cr, &font_extents);
+
+        double x = x0 + width / 2 - extents.x_advance * scale_x / 2;
+
+        cairo_matrix_t matrix;
+        cairo_matrix_init(&matrix,
+            scale_x, 0, 0, scale_y,
+            x, y - font_extents.descent * scale_y + font_extents.height * scale_y);
+        cairo_set_matrix(cr, &matrix);
+
+        cairo_set_source_rgb(cr, 0, 0, 0);
+        cairo_move_to(cr, 0, 0);
+        cairo_show_text(cr, text_char.c_str());
+
+        y += extents.x_advance * scale_y;
+    }
+
+    return true;
+}
+
 // Parse command line
 bool pdfplaca_parse_cmdline(int argc, _TCHAR **argv)
 {
@@ -1330,7 +1466,10 @@ bool pdfplaca_draw_v_page(cairo_t *cr, const std::vector<std::string>& rows, dou
             auto g = get_g_value(g_text_color);
             auto b = get_b_value(g_text_color);
             cairo_set_source_rgb(cr, r / 255.0, g / 255.0, b / 255.0);
-            pdf_draw_v_text(cr, rows[iRow].c_str(), x0, margin, row_width, printable_height, g_threshold);
+            if (g_fixed_pitch_font)
+                pdf_draw_v_text_fixed(cr, rows[iRow].c_str(), x0, margin, row_width, printable_height, g_threshold);
+            else
+                pdf_draw_v_text(cr, rows[iRow].c_str(), x0, margin, row_width, printable_height, g_threshold);
         }
         cairo_restore(cr); // Restore drawing status
         // Advance
@@ -1471,6 +1610,7 @@ bool pdfplaca_do_it(const _TCHAR *out_file, const _TCHAR *out_text, const _TCHAR
         double scale_x = 2, scale_y = 3;
 
         double x = 150, y = 150;
+        cairo_matrix_t matrix;
 #if 0 // -90度回転かつ上下反転
         cairo_matrix_init(&matrix,
             0, scale_y, scale_x, 0,
