@@ -1522,7 +1522,7 @@ bool pdfplaca_draw_v_page(cairo_t *cr, const std::vector<std::string>& rows, dou
             auto g = get_g_value(g_text_color);
             auto b = get_b_value(g_text_color);
             cairo_set_source_rgb(cr, r / 255.0, g / 255.0, b / 255.0);
-            if (g_fixed_pitch_font)
+            if (g_fixed_pitch_font && pdf_is_font_japanese(cr))
                 pdf_draw_v_text_fixed(cr, rows[iRow].c_str(), x0, margin, row_width, printable_height, g_threshold);
             else
                 pdf_draw_v_text(cr, rows[iRow].c_str(), x0, margin, row_width, printable_height, g_threshold);
